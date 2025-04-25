@@ -4,7 +4,6 @@ import com.practice.technicaltask.dto.UserCreateDto;
 import com.practice.technicaltask.dto.UserReadDto;
 import com.practice.technicaltask.mapper.UserMapper;
 import com.practice.technicaltask.service.UserService;
-import com.practice.technicaltask.utils.RequestConstants;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -24,14 +23,18 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    public UserReadDto update(@RequestBody UserCreateDto updatedUser, @PathVariable int id,
-                              @RequestHeader(RequestConstants.USER_ID_HEADER) int userId) {
-        return userMapper.toDto(userService.update(updatedUser, id, userId));
+    public UserReadDto update(@RequestBody UserCreateDto updatedUser, @PathVariable int id) {
+        return userMapper.toDto(userService.update(updatedUser, id, userService.getCurrentUser().getId()));
     }
 
     @GetMapping("/{id}")
     public UserReadDto findById(@PathVariable int id) {
         return userMapper.toDto(userService.findById(id));
+    }
+
+    @GetMapping("/name/{name}")
+    public UserReadDto findByName(@PathVariable String name) {
+        return userMapper.toDto(userService.findByName(name));
     }
 
     @GetMapping
@@ -40,7 +43,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable int id, @RequestHeader(RequestConstants.USER_ID_HEADER) int userId) {
-        userService.delete(id, userId);
+    public void delete(@PathVariable int id) {
+        userService.delete(id, userService.getCurrentUser().getId());
     }
 }

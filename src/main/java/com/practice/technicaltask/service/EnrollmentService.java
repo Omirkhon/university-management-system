@@ -11,6 +11,8 @@ import com.practice.technicaltask.repository.CourseRepository;
 import com.practice.technicaltask.repository.EnrollmentRepository;
 import com.practice.technicaltask.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,57 +25,71 @@ public class EnrollmentService {
     private final UserRepository userRepository;
     private final CourseRepository courseRepository;
 
-    public Enrollment create(EnrollmentCreateDto enrollmentCreateDto, int userId, int courseId, int headerUserId) {
+    public Enrollment create(EnrollmentCreateDto dto, int courseId, int userId) {
+        User currentUser = getCurrentUser();
+        checkIfUserHasPermission(currentUser);
         User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found."));
-        Course course = courseRepository.findById(courseId).orElseThrow(() -> new NotFoundException("Course not found."));
-        checkIfUserHasPermission(headerUserId);
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new NotFoundException("Course not found."));
 
         Enrollment enrollment = new Enrollment();
-        enrollment.setDescription(enrollmentCreateDto.getDescription());
+        enrollment.setDescription(dto.getDescription());
         enrollment.setCreated(LocalDateTime.now());
         enrollment.setUser(user);
         enrollment.setCourse(course);
         return enrollmentRepository.save(enrollment);
     }
 
-    public Enrollment update(EnrollmentCreateDto updatedEnrollment, int headerUserId, int id) {
-        checkIfUserHasPermission(headerUserId);
+    public Enrollment update(int id, EnrollmentCreateDto updatedEnrollment) {
+        User currentUser = getCurrentUser();
+        checkIfUserHasPermission(currentUser);
 
-        Enrollment enrollment = enrollmentRepository.findById(id).orElseThrow(() -> new NotFoundException("Enrollment not found."));
+        Enrollment enrollment = enrollmentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Enrollment not found."));
 
         if (updatedEnrollment.getDescription() != null) {
             enrollment.setDescription(updatedEnrollment.getDescription());
         }
+
         return enrollmentRepository.save(enrollment);
     }
 
-    public List<Enrollment> findAll(int headerUserId) {
-        checkIfUserHasPermission(headerUserId);
+    public List<Enrollment> findAll() {
+        checkIfUserHasPermission(getCurrentUser());
         return enrollmentRepository.findAll();
     }
 
-    public List<Enrollment> findAllUserEnrollments(int headerUserId, int userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found."));
-        if (headerUserId != userId) {
-            checkIfUserHasPermission(headerUserId);
+    public List<Enrollment> findAllUserEnrollments(int userId) {
+        User currentUser = getCurrentUser();
+        if (currentUser.getId() != userId) {
+            checkIfUserHasPermission(currentUser);
         }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found."));
+
         return enrollmentRepository.findAllByUser(user);
     }
 
-    public Enrollment findById(int headerUserId, int id) {
-        checkIfUserHasPermission(headerUserId);
-        return enrollmentRepository.findById(id).orElseThrow(() -> new NotFoundException("Enrollment not found."));
+    public Enrollment findById(int id) {
+        checkIfUserHasPermission(getCurrentUser());
+        return enrollmentRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Enrollment not found."));
     }
 
-    public void delete(int headerUserId, int id) {
-        checkIfUserHasPermission(headerUserId);
+    public void delete(int id) {
+        checkIfUserHasPermission(getCurrentUser());
         enrollmentRepository.deleteById(id);
     }
 
-    public void checkIfUserHasPermission(int userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found."));
+    private void checkIfUserHasPermission(User user) {
         if (user.getRole() != Role.ADMIN && user.getRole() != Role.TEACHER) {
             throw new ForbiddenException("Access denied.");
         }
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return (User) authentication.getPrincipal();
     }
 }

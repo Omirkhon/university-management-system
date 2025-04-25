@@ -4,7 +4,6 @@ import com.practice.technicaltask.dto.CourseCreateDto;
 import com.practice.technicaltask.dto.CourseReadDto;
 import com.practice.technicaltask.mapper.CourseMapper;
 import com.practice.technicaltask.service.CourseService;
-import com.practice.technicaltask.utils.RequestConstants;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -15,18 +14,20 @@ import java.util.List;
 @RequestMapping("/courses")
 @RequiredArgsConstructor
 public class CourseController {
-    private final CourseMapper courseMapper;
     private final CourseService courseService;
+    private final CourseMapper courseMapper;
 
     @PostMapping
-    public CourseReadDto create(@RequestBody @Valid CourseCreateDto courseDto, @RequestHeader(RequestConstants.USER_ID_HEADER) int userId) {
-        return courseMapper.toDto(courseService.create(courseDto, userId));
+    public CourseReadDto create(@RequestBody @Valid CourseCreateDto courseDto) {
+        return courseMapper.toDto(courseService.create(courseDto));
     }
 
     @PatchMapping("/{id}")
-    public CourseReadDto update(@PathVariable int id, @RequestBody CourseCreateDto updatedCourse,
-                                  @RequestHeader(RequestConstants.USER_ID_HEADER) int userId) {
-        return courseMapper.toDto(courseService.update(id, updatedCourse, userId));
+    public CourseReadDto update(
+            @PathVariable int id,
+            @RequestBody CourseCreateDto updatedCourse
+    ) {
+        return courseMapper.toDto(courseService.update(id, updatedCourse));
     }
 
     @GetMapping
@@ -40,7 +41,7 @@ public class CourseController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable int id, @RequestHeader(RequestConstants.USER_ID_HEADER) int userId) {
-        courseService.delete(id, userId);
+    public void delete(@PathVariable int id) {
+        courseService.delete(id);
     }
 }
