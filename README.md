@@ -12,7 +12,7 @@ Users, their Enrollmentsand the Courses.
 `./mvnw clean install`
 
 ### 3. Run
-There are two ways. First, we can hust run TechnicalTaskApplication class through IDE manually.
+There are two ways. First, we can just run TechnicalTaskApplication class through IDE manually.
 
 Second is to run command:
 
